@@ -18,7 +18,7 @@ public class UserJoinResponse {
 
         return new UserJoinResponse(
                 user.getId(),
-                user.getUserName(),
+                user.getUsername(),
                 user.getRole()
         );
     }
