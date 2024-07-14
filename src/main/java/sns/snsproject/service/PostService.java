@@ -7,10 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
+import sns.snsproject.model.Comment;
 import sns.snsproject.model.Post;
+import sns.snsproject.model.entity.CommentEntity;
 import sns.snsproject.model.entity.LikeEntity;
 import sns.snsproject.model.entity.PostEntity;
 import sns.snsproject.model.entity.UserEntity;
+import sns.snsproject.repository.CommentEntityRepository;
 import sns.snsproject.repository.LikeEntityRepository;
 import sns.snsproject.repository.PostEntityRepository;
 import sns.snsproject.repository.UserEntityRepository;
@@ -23,6 +26,7 @@ public class PostService {
     private final PostEntityRepository postEntityRepository;
     private final UserEntityRepository userEntityRepository;
     private final LikeEntityRepository likeEntityRepository;
+    private final CommentEntityRepository commentEntityRepository;
 
 
     @Transactional
@@ -86,6 +90,20 @@ public class PostService {
     public long likeCount(Long postId) {
         PostEntity postEntity = getPostEntityOrException(postId);
         return likeEntityRepository.countByPost(postEntity);
+    }
+
+    @Transactional
+    public void comment(Long postId, String comment, String userName) {
+        UserEntity userEntity = getUserEntityOrException(userName);
+        PostEntity postEntity = getPostEntityOrException(postId);
+
+        commentEntityRepository.save(CommentEntity.of(userEntity, postEntity, comment));
+
+    }
+
+    public Page<Comment> getComment(Long postId, Pageable pageable) {
+        PostEntity postEntity = getPostEntityOrException(postId);
+        return commentEntityRepository.findAllByPost(postEntity, pageable).map(Comment::fromEntity);
     }
 
     //post exist
