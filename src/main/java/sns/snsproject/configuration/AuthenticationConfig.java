@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,9 +38,8 @@ public class AuthenticationConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeHttpRequestsCustomizer -> authorizeHttpRequestsCustomizer
-                        .requestMatchers("/api/*/users/join", "/api/*/users/login").permitAll()
-                        .anyRequest().authenticated()
-                );
+                        .requestMatchers("/api/**").permitAll()
+                        .anyRequest().authenticated());
 
         //세션 설정 : STATELESS
         http
@@ -48,9 +49,13 @@ public class AuthenticationConfig {
         http
                 .addFilterBefore(new JwtTokenFilter(key, userService), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling()
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
-                ;
-
+                .authenticationEntryPoint(new CustomAuthenticationEntryPoint());
         return http.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/api/")
+                .requestMatchers(HttpMethod.POST, "/api/*/users/join", "/api/*/users/login");
     }
 }

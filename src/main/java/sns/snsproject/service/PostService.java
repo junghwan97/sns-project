@@ -8,8 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
 import sns.snsproject.model.Post;
+import sns.snsproject.model.entity.LikeEntity;
 import sns.snsproject.model.entity.PostEntity;
 import sns.snsproject.model.entity.UserEntity;
+import sns.snsproject.repository.LikeEntityRepository;
 import sns.snsproject.repository.PostEntityRepository;
 import sns.snsproject.repository.UserEntityRepository;
 
@@ -20,6 +22,7 @@ public class PostService {
 
     private final PostEntityRepository postEntityRepository;
     private final UserEntityRepository userEntityRepository;
+    private final LikeEntityRepository likeEntityRepository;
 
 
     @Transactional
@@ -63,6 +66,26 @@ public class PostService {
     public Page<Post> my(String userName, Pageable pageable) {
         UserEntity userEntity = getUserEntityOrException(userName);
         return postEntityRepository.findAllByUser(userEntity, pageable).map(Post::fromEntity);
+    }
+
+    @Transactional
+    public void like(Long postId, String userName) {
+
+        UserEntity userEntity = getUserEntityOrException(userName);
+        PostEntity postEntity = getPostEntityOrException(postId);
+
+        // check like
+        likeEntityRepository.findByUserAndPost(userEntity, postEntity).ifPresent(it -> {
+            throw new SnsApplicationException(ErrorCode.ALREADY_LIKED, String.format("userName %s already like post %d", userName, postId));
+        });
+
+        likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
+    }
+
+    @Transactional
+    public long likeCount(Long postId) {
+        PostEntity postEntity = getPostEntityOrException(postId);
+        return likeEntityRepository.countByPost(postEntity);
     }
 
     //post exist
