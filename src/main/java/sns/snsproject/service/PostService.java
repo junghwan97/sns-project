@@ -7,16 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
+import sns.snsproject.model.AlarmArgs;
+import sns.snsproject.model.AlarmType;
 import sns.snsproject.model.Comment;
 import sns.snsproject.model.Post;
-import sns.snsproject.model.entity.CommentEntity;
-import sns.snsproject.model.entity.LikeEntity;
-import sns.snsproject.model.entity.PostEntity;
-import sns.snsproject.model.entity.UserEntity;
-import sns.snsproject.repository.CommentEntityRepository;
-import sns.snsproject.repository.LikeEntityRepository;
-import sns.snsproject.repository.PostEntityRepository;
-import sns.snsproject.repository.UserEntityRepository;
+import sns.snsproject.model.entity.*;
+import sns.snsproject.repository.*;
 
 
 @Service
@@ -27,6 +23,7 @@ public class PostService {
     private final UserEntityRepository userEntityRepository;
     private final LikeEntityRepository likeEntityRepository;
     private final CommentEntityRepository commentEntityRepository;
+    private final AlarmEntityRepository alarmEntityRepository;
 
 
     @Transactional
@@ -84,6 +81,8 @@ public class PostService {
         });
 
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
+
+        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
     }
 
     @Transactional
@@ -98,6 +97,7 @@ public class PostService {
         PostEntity postEntity = getPostEntityOrException(postId);
 
         commentEntityRepository.save(CommentEntity.of(userEntity, postEntity, comment));
+        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
 
     }
 
