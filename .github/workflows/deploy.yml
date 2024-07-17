@@ -21,6 +21,6 @@ jobs:
             git pull origin master
             ./gradlew clean build
             sudo fuser -k -n tcp 8080 || true
-            #표준출력
+          
             nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
 
