@@ -284,6 +284,6 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij,intellij+iml,intellij+all,gradle,java
 
-/src/main/resources/application.yml
 
+HELP.md
 
