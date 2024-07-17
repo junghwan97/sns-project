@@ -11,8 +11,11 @@ import sns.snsproject.controller.response.AlarmResponse;
 import sns.snsproject.controller.response.Response;
 import sns.snsproject.controller.response.UserJoinResponse;
 import sns.snsproject.controller.response.UserLoginResponse;
+import sns.snsproject.exception.ErrorCode;
+import sns.snsproject.exception.SnsApplicationException;
 import sns.snsproject.model.User;
 import sns.snsproject.service.UserService;
+import sns.snsproject.util.ClassUtils;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -35,6 +38,8 @@ public class UserController {
 
     @GetMapping("/alarm")
     public Response<Page<AlarmResponse>> alarm(Pageable pageable, Authentication authentication) {
-        return Response.success(userService.alarmList(authentication.getName(), pageable).map(AlarmResponse::fromAlarm));
+        User user = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class).orElseThrow(
+                () -> new SnsApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, String.format("Casting to User class failed")));
+        return Response.success(userService.alarmList(user.getId(), pageable).map(AlarmResponse::fromAlarm));
     }
 }
