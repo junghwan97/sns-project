@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${{ secrets.MYSQL_URL }}
+    username: ${{ secrets.MYSQL_USERNAME }}
+    password: ${{ secrets.MYSQL_PASSWORD }}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+logging.level:
+  #  org.hibernate.SQL: debug
+  org.hibernate.orm.jdbc.bind: trace
+
+jwt:
+  secret-key: ${{ secrets.JWT_KEY }}
+#  30?
+  token.expired-time-ms: 2592000000
