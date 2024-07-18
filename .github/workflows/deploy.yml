@@ -18,7 +18,7 @@ jobs:
           script_stop: true
           script: |
             cd /home/ubuntu/sns-project
-            git pull origin test
+            git pull origin develop
             ./gradlew clean build
             sudo fuser -k -n tcp 8080 || true
             nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
