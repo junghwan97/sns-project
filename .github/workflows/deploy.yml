@@ -3,7 +3,7 @@ name : Deploy to EC2
 on:
   push:
     branches:
-      - master
+      - develop
 
 jobs:
   Deploy:
@@ -16,11 +16,10 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script_stop: true
-          script:
+          script: |
             cd/home/ubuntu/sns-project
-            git pull origin master
+            git pull origin develop
             ./gradlew clean build
-            sudo fuser -k -n tcp 8080 || true
-            #표준출력
+            sudo fuser -k -n tcp 8080 || true            
             nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
 

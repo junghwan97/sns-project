@@ -48,8 +48,8 @@ public class AuthenticationConfig {
 
         http
                 .addFilterBefore(new JwtTokenFilter(key, userService), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling()
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint());
+                .exceptionHandling(exceptionHandlingConfigurer -> exceptionHandlingConfigurer
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint()));
         return http.build();
     }
 
