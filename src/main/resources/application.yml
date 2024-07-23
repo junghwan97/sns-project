@@ -1,9 +1,11 @@
 spring:
+  profiles:
+    include: secrets
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${{ secrets.MYSQL_URL }}
-    username: ${{ secrets.MYSQL_USERNAME }}
-    password: ${{ secrets.MYSQL_PASSWORD }}
+    url: ${secrets.url}
+    username: ${secrets.username}
+    password: ${secrets.password}
 
   jpa:
     hibernate:
@@ -18,6 +20,6 @@ logging.level:
   org.hibernate.orm.jdbc.bind: trace
 
 jwt:
-  secret-key: ${{ secrets.JWT_KEY }}
-#  30?
+  #  30
   token.expired-time-ms: 2592000000
+  secret-key: ${secrets.secret-key}

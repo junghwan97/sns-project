@@ -1,15 +1,16 @@
-name : Deploy to EC2
-
+name: Deploy to EC2
 on:
-  push:
+  pull_request:
     branches:
       - develop
-
 jobs:
   Deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH(원격 접속)로 EC2로 접속하기
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: SSH to EC2 and deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -19,7 +20,7 @@ jobs:
           script: |
             cd /home/ubuntu/sns-project
             git pull origin develop
+            echo ${{ secrets.APPLICATION_SECRET_YML }} | base64 --decode > ./src/main/resources/application-secrets.yml 
             ./gradlew clean build
             sudo fuser -k -n tcp 8080 || true
             nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
-
