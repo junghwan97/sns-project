@@ -33,7 +33,7 @@ jobs:
           key: ${{ secrets.GCP_PRIVATE_KEY }}
           script_stop: true
           script: |
-            cd /home/ubuntu/sns-project
+            cd /home/nickchoi0515/sns-project
             git pull origin develop
             echo ${{ secrets.APPLICATION_SECRET_YML }} | base64 --decode > ./src/main/resources/application-secrets.yml 
             ./gradlew clean build
