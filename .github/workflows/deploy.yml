@@ -34,7 +34,6 @@ jobs:
           script_stop: true
           script: |
             cd /home/nickchoi0515/sns-project
-            whoami
             git pull origin develop
             echo ${{ secrets.APPLICATION_SECRET_YML }} | base64 --decode > ./src/main/resources/application-secrets.yml 
             ./gradlew clean build
