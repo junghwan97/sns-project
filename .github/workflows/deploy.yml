@@ -10,7 +10,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: SSH to EC2 and Deploy
+      - name: SSH to EC2 and Deploy1
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -25,7 +25,7 @@ jobs:
             sudo fuser -k -n tcp 8080 || true
             nohup java -Xms128m -Xmx256m -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
 
-      - name: SSH to GCP and Deploy
+      - name: SSH to GCP and Deploy2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.GCP_HOST }}
