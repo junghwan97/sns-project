@@ -14,6 +14,8 @@ import sns.snsproject.controller.response.Response;
 import sns.snsproject.model.Post;
 import sns.snsproject.service.PostService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/posts")
 @RequiredArgsConstructor
@@ -43,6 +45,17 @@ public class PostController {
     @GetMapping
     public Response<Page<PostResponse>> list(Pageable pageable, Authentication authentication) {
         return Response.success(postService.list(pageable).map(PostResponse::fromPost));
+    }
+
+    @GetMapping("/{postId}")
+    public Response<PostResponse> get(@PathVariable Long postId) {
+        return Response.success(PostResponse.fromPost(postService.selectById(postId)));
+    }
+
+    @GetMapping("/popular")
+    public Response<List<PostResponse>> getTopPosts() {
+        List<PostResponse> topPosts = postService.getTopPosts(5);
+        return Response.success(topPosts);
     }
 
     @GetMapping("/my")
