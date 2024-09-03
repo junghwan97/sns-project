@@ -1,9 +1,10 @@
 package sns.snsproject.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import sns.snsproject.model.Comment;
 import sns.snsproject.model.Post;
 import sns.snsproject.model.entity.*;
 import sns.snsproject.repository.*;
+import sns.snsproject.util.RedisStorage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +34,10 @@ public class PostService {
     private final LikeEntityRepository likeEntityRepository;
     private final CommentEntityRepository commentEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisStorage redisStorage;
 
     // Redis Sorted Set의 key
-    private final String REDIS_KEY = "post:views";
+    private static final String REDIS_KEY = "post:views";
 
     @Transactional
     public void create(String title, String body, String userName) {
@@ -71,8 +73,15 @@ public class PostService {
         postEntityRepository.delete(postEntity);
     }
 
-    public Page<Post> list(Pageable pageable) {
-        return postEntityRepository.findAll(pageable).map(Post::fromEntity);
+    @Cacheable(cacheNames = "getPosts", key = "'posts:page:' + #page + ':size:' + #size", cacheManager = "postCacheManager")
+    public List<PostResponse> getPosts(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<PostEntity> pageOfBoards = postEntityRepository.findAllByOrderByRegisteredAtDesc(pageable);
+        List<PostResponse> postResponses = new ArrayList<>();
+        for (PostEntity postEntity : pageOfBoards) {
+            postResponses.add(PostResponse.fromPost(Post.fromEntity(postEntity)));
+        }
+        return postResponses;
     }
 
     public Post selectById(Long postId) {
@@ -85,14 +94,13 @@ public class PostService {
         // 게시글 ID를 value로 사용
         String member = postId.toString();
         // 조회수를 1 증가시키기
-        redisTemplate.opsForZSet().incrementScore(REDIS_KEY, member, 1);
+        redisStorage.incrementScore(REDIS_KEY, member);
     }
 
+    @Cacheable(cacheNames = "popularPosts", key = "'posts:'", cacheManager = "postCacheManager")
     public List<PostResponse> getTopPosts(int limit) {
-        // Redis Sorted Set의 key
-        String key = "post:views";
         // Sorted Set에서 상위 N개 항목과 점수를 조회
-        Set<ZSetOperations.TypedTuple<String>> topPosts = redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, limit - 1);
+        Set<ZSetOperations.TypedTuple<String>> topPosts = redisStorage.getTopPostsWithScores(REDIS_KEY, limit);
         List<PostResponse> topPostResponses = new ArrayList<>();
         for (ZSetOperations.TypedTuple<String> tuple : topPosts) {
             String postId = tuple.getValue();
@@ -110,7 +118,7 @@ public class PostService {
     // 자정마다 조회수 초기화
     @Scheduled(cron = "0 0 0 * * *")
     public void resetViews() {
-        redisTemplate.delete(REDIS_KEY);
+        redisStorage.delete(REDIS_KEY);
     }
 
     public Page<Post> my(String userName, Pageable pageable) {

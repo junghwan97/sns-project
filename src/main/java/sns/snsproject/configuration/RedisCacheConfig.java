@@ -30,8 +30,8 @@ public class RedisCacheConfig {
                                 new Jackson2JsonRedisSerializer<Object>(Object.class)
                         )
                 )
-                // 데이터의 만료기간(TTL) 설정 - 1일(24 * 60분)
-                .entryTtl(Duration.ofMinutes(1440L));
+                // 데이터의 만료기간(TTL) 설정 - 1분
+                .entryTtl(Duration.ofMinutes(1L));
 
         return RedisCacheManager
                 .RedisCacheManagerBuilder

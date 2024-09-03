@@ -42,9 +42,9 @@ public class PostController {
         return Response.success();
     }
 
-    @GetMapping
-    public Response<Page<PostResponse>> list(Pageable pageable, Authentication authentication) {
-        return Response.success(postService.list(pageable).map(PostResponse::fromPost));
+    @GetMapping("feed")
+    public Response<List<PostResponse>> getPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        return Response.success(postService.getPosts(page, size));
     }
 
     @GetMapping("/{postId}")

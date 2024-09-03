@@ -10,4 +10,6 @@ import sns.snsproject.model.entity.UserEntity;
 @Repository
 public interface PostEntityRepository extends JpaRepository<PostEntity, Long> {
     Page<PostEntity> findAllByUser(UserEntity userEntity, Pageable pageable);
+
+    Page<PostEntity> findAllByOrderByRegisteredAtDesc(Pageable pageable);
 }
