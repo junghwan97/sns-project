@@ -35,6 +35,7 @@ public class PostService {
     private final CommentEntityRepository commentEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
     private final RedisStorage redisStorage;
+    private final FollowEntityRepository followEntityRepository;
 
     // Redis Sorted Set의 key
     private static final String REDIS_KEY = "post:views";
@@ -161,6 +162,18 @@ public class PostService {
     public Page<Comment> getComment(Long postId, Pageable pageable) {
         PostEntity postEntity = getPostEntityOrException(postId);
         return commentEntityRepository.findAllByPost(postEntity, pageable).map(Comment::fromEntity);
+    }
+
+    public List<PostEntity> getPostsFromFollowedUsers(String userName) {
+        UserEntity user = getUserEntityOrException(userName);
+        // 팔로우한 사용자 목록 조회
+        List<FollowEntity> followedUsers = followEntityRepository.findByFollower(user);
+        // 팔로우한 사용자 목록 추출
+        List<UserEntity> followedUserEntities = followedUsers.stream()
+                .map(FollowEntity::getFollowing)
+                .toList();
+        // 팔로우한 사용자들의 글 조회
+        return postEntityRepository.findByUserIn(followedUserEntities);
     }
 
     //post exist

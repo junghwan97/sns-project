@@ -15,7 +15,10 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "Token is invalid"),
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "Post Not Found"),
     INVALID_PERMISSION(HttpStatus.UNAUTHORIZED, "Permission is invalid"),
-    ALREADY_LIKED(HttpStatus.CONFLICT, "User already liked post");
+    ALREADY_LIKED(HttpStatus.CONFLICT, "User already liked post"),
+    DUPLICATE_FOLLOW(HttpStatus.CONFLICT, "Duplicate Follow"),
+    FOLLOW_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLLOW Not Fount")
+    ;
 
     private HttpStatus status;
     private String message;

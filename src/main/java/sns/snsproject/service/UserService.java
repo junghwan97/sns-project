@@ -10,9 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
 import sns.snsproject.model.Alarm;
+import sns.snsproject.model.Follow;
 import sns.snsproject.model.User;
+import sns.snsproject.model.entity.FollowEntity;
 import sns.snsproject.model.entity.UserEntity;
 import sns.snsproject.repository.AlarmEntityRepository;
+import sns.snsproject.repository.FollowEntityRepository;
 import sns.snsproject.repository.UserEntityRepository;
 import sns.snsproject.util.JwtTokenUtils;
 
@@ -22,6 +25,7 @@ public class UserService {
 
     private final UserEntityRepository userEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
+    private final FollowEntityRepository followEntityRepository;
     private final BCryptPasswordEncoder encoder;
 
     @Value("${jwt.secret-key}")
@@ -64,5 +68,34 @@ public class UserService {
         return userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(() ->
                 new SnsApplicationException(ErrorCode.USER_NOT_FOUND, String.format("%s not founded", userName))
         );
+    }
+
+    @Transactional
+    public Follow follow(Long followerId, Long followingId) {
+        UserEntity follower = userEntityRepository.findById(followerId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Follower not found"));
+        UserEntity following = userEntityRepository.findById(followingId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Following not found"));
+
+        if (followEntityRepository.existsByFollowerAndFollowing(follower, following)) {
+            throw new SnsApplicationException(ErrorCode.DUPLICATE_FOLLOW, "Already following");
+        }
+
+        FollowEntity followEntity = FollowEntity.of(follower, following);
+        followEntityRepository.save(followEntity);
+        return Follow.fromEntity(followEntity);
+    }
+
+    @Transactional
+    public void unfollow(Long followerId, Long followingId) {
+        UserEntity follower = userEntityRepository.findById(followerId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Follower not found"));
+        UserEntity following = userEntityRepository.findById(followingId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Following not found"));
+
+        FollowEntity followEntity = followEntityRepository.findByFollowerAndFollowing(follower, following)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.FOLLOW_NOT_FOUND, "Follow relationship not found"));
+
+        followEntityRepository.delete(followEntity);
     }
 }

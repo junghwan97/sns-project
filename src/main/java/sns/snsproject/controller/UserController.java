@@ -7,12 +7,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import sns.snsproject.controller.request.UserJoinRequest;
 import sns.snsproject.controller.request.UserLoginRequest;
-import sns.snsproject.controller.response.AlarmResponse;
-import sns.snsproject.controller.response.Response;
-import sns.snsproject.controller.response.UserJoinResponse;
-import sns.snsproject.controller.response.UserLoginResponse;
+import sns.snsproject.controller.response.*;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
+import sns.snsproject.model.Follow;
 import sns.snsproject.model.User;
 import sns.snsproject.service.UserService;
 import sns.snsproject.util.ClassUtils;
@@ -42,4 +40,21 @@ public class UserController {
                 () -> new SnsApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, String.format("Casting to User class failed")));
         return Response.success(userService.alarmList(user.getId(), pageable).map(AlarmResponse::fromAlarm));
     }
+
+    @PostMapping("/{followingId}/follow")
+    public Response<FollowResponse> follow(@PathVariable Long followingId, Authentication authentication) {
+        User follower = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class).orElseThrow(
+                () -> new SnsApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, "User casting failed"));
+        Follow follow = userService.follow(follower.getId(), followingId);
+        return Response.success(FollowResponse.fromFollow(follow));
+    }
+
+    @DeleteMapping("/{followingId}/unfollow")
+    public Response<String> unfollow(@PathVariable Long followingId, Authentication authentication) {
+        User follower = ClassUtils.getSafeCastInstance(authentication.getPrincipal(), User.class)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.INTERNAL_SERVER_ERROR, "User casting failed"));
+        userService.unfollow(follower.getId(), followingId);
+        return Response.success("Unfollowed successfully");
+    }
+
 }
