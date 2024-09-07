@@ -72,14 +72,10 @@ public class UserService {
 
     @Transactional
     public Follow follow(Long followerId, Long followingId) {
-        UserEntity follower = userEntityRepository.findById(followerId)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Follower not found"));
-        UserEntity following = userEntityRepository.findById(followingId)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Following not found"));
+        UserEntity follower = getUserEntityOrException(followerId);
+        UserEntity following = getUserEntityOrException(followingId);
 
-        if (followEntityRepository.existsByFollowerAndFollowing(follower, following)) {
-            throw new SnsApplicationException(ErrorCode.DUPLICATE_FOLLOW, "Already following");
-        }
+        validateNotFollowing(follower, following);
 
         FollowEntity followEntity = FollowEntity.of(follower, following);
         followEntityRepository.save(followEntity);
@@ -88,14 +84,29 @@ public class UserService {
 
     @Transactional
     public void unfollow(Long followerId, Long followingId) {
-        UserEntity follower = userEntityRepository.findById(followerId)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Follower not found"));
-        UserEntity following = userEntityRepository.findById(followingId)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Following not found"));
+        UserEntity follower = getUserEntityOrException(followerId);
+        UserEntity following = getUserEntityOrException(followingId);
 
-        FollowEntity followEntity = followEntityRepository.findByFollowerAndFollowing(follower, following)
-                .orElseThrow(() -> new SnsApplicationException(ErrorCode.FOLLOW_NOT_FOUND, "Follow relationship not found"));
-
+        FollowEntity followEntity =validateFollowExists(follower, following);
         followEntityRepository.delete(followEntity);
+    }
+
+    // user exist
+    private UserEntity getUserEntityOrException(Long userId) {
+        return userEntityRepository.findById(userId)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.USER_NOT_FOUND, "Follower not found"));
+    }
+
+    // follow exist
+    private void validateNotFollowing(UserEntity follower, UserEntity following) {
+        if (followEntityRepository.existsByFollowerAndFollowing(follower, following)) {
+            throw new SnsApplicationException(ErrorCode.DUPLICATE_FOLLOW, "Already following");
+        }
+    }
+
+    // follow exist for Unfollow
+    private FollowEntity validateFollowExists(UserEntity follower, UserEntity following) {
+        return followEntityRepository.findByFollowerAndFollowing(follower, following)
+                .orElseThrow(() -> new SnsApplicationException(ErrorCode.FOLLOW_NOT_FOUND, "Follow relationship not found"));
     }
 }
