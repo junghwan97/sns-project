@@ -164,16 +164,9 @@ public class PostService {
         return commentEntityRepository.findAllByPost(postEntity, pageable).map(Comment::fromEntity);
     }
 
-    public List<PostEntity> getPostsFromFollowedUsers(String userName) {
+    public Page<Post> getPostsFromFollowedUsers(String userName, Pageable pageable) {
         UserEntity user = getUserEntityOrException(userName);
-        // 팔로우한 사용자 목록 조회
-        List<FollowEntity> followedUsers = followEntityRepository.findByFollower(user);
-        // 팔로우한 사용자 목록 추출
-        List<UserEntity> followedUserEntities = followedUsers.stream()
-                .map(FollowEntity::getFollowing)
-                .toList();
-        // 팔로우한 사용자들의 글 조회
-        return postEntityRepository.findByUserIn(followedUserEntities);
+        return postEntityRepository.findPostsFromFollowedUsers(user, pageable).map(Post::fromEntity);
     }
 
     //post exist
