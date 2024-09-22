@@ -23,6 +23,7 @@ import sns.snsproject.util.RedisStorage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -164,9 +165,35 @@ public class PostService {
         return commentEntityRepository.findAllByPost(postEntity, pageable).map(Comment::fromEntity);
     }
 
-    public Page<Post> getPostsFromFollowedUsers(String userName, Pageable pageable) {
+    public List<PostResponse> getPostsFromFollowedUsers(String userName, Integer pageSize, Long cursorId) {
         UserEntity user = getUserEntityOrException(userName);
-        return postEntityRepository.findPostsFromFollowedUsers(user, pageable).map(Post::fromEntity);
+        Pageable pageable = PageRequest.of(0, pageSize + 1);
+
+        List<PostEntity> postEntities = new ArrayList<>();
+        if (cursorId == 0) {
+            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDescWithoutCursor(user, pageable);
+        } else {
+            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDesc(user, pageable, cursorId);
+        }
+        boolean hasNext = hasNext(postEntities.size(), pageSize);
+        postEntities = toSubListIfHasNext(hasNext, pageSize, postEntities);
+        List<PostResponse> postResponses = new ArrayList<>();
+        List<Post> posts = postEntities.stream().map(Post::fromEntity).collect(Collectors.toList());
+        for (Post post : posts) {
+            postResponses.add(PostResponse.fromPost(post));
+        }
+        return postResponses;
+    }
+
+    private boolean hasNext(int postsSize, int pageSize) {
+        if (postsSize == 0) {
+            throw new SnsApplicationException(ErrorCode.POST_NOT_FOUND, String.format("Next page isn't exist"));
+        }
+        return postsSize > pageSize;
+    }
+
+    private List<PostEntity> toSubListIfHasNext(boolean hasNext, int pageSize, List<PostEntity> posts) {
+        return hasNext ? posts.subList(0, pageSize) : posts;
     }
 
     //post exist

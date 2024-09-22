@@ -2,7 +2,6 @@ package sns.snsproject.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -43,21 +42,15 @@ public class PostController {
         return Response.success();
     }
 
-    @GetMapping("/feed")
-    public Response<List<PostResponse>> getPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Response.success(postService.getPosts(page, size));
-    }
-
     @GetMapping("/followed")
-    public Response<Page<PostResponse>> getPostsFromFollowedUsers(Authentication authentication,
-                                                                  @RequestParam(defaultValue = "0") int page,
-                                                                  @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return Response.success(postService.getPostsFromFollowedUsers(authentication.getName(), pageable).map(PostResponse::fromPost));
+    public Response<List<PostResponse>> getFeed(@RequestParam(value = "cursorId", defaultValue = "0") Long cursorId,
+                                                @RequestParam(value = "size", defaultValue = "10") Integer size,
+                                                Authentication authentication) {
+        return Response.success(postService.getPostsFromFollowedUsers(authentication.getName(), size, cursorId));
     }
 
     @GetMapping("/{postId}")
-    public Response<PostResponse> get(@PathVariable Long postId) {
+    public Response<PostResponse> getPost(@PathVariable Long postId) {
         return Response.success(PostResponse.fromPost(postService.selectById(postId)));
     }
 
