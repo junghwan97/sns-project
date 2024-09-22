@@ -12,7 +12,6 @@ import sns.snsproject.controller.response.CommentResponse;
 import sns.snsproject.controller.response.PostResponse;
 import sns.snsproject.controller.response.Response;
 import sns.snsproject.model.Post;
-import sns.snsproject.model.entity.PostEntity;
 import sns.snsproject.service.PostService;
 
 import java.util.List;
@@ -43,19 +42,15 @@ public class PostController {
         return Response.success();
     }
 
-    @GetMapping("/feed")
-    public Response<List<PostResponse>> getPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Response.success(postService.getPosts(page, size));
-    }
-
-    @GetMapping("/posts/followed")
-    public Response<List<PostEntity>> getPostsFromFollowedUsers(Authentication authentication) {
-        List<PostEntity> posts = postService.getPostsFromFollowedUsers(authentication.getName());
-        return Response.success(posts);
+    @GetMapping("/followed")
+    public Response<List<PostResponse>> getFeed(@RequestParam(value = "cursorId", defaultValue = "0") Long cursorId,
+                                                @RequestParam(value = "size", defaultValue = "10") Integer size,
+                                                Authentication authentication) {
+        return Response.success(postService.getPostsFromFollowedUsers(authentication.getName(), size, cursorId));
     }
 
     @GetMapping("/{postId}")
-    public Response<PostResponse> get(@PathVariable Long postId) {
+    public Response<PostResponse> getPost(@PathVariable Long postId) {
         return Response.success(PostResponse.fromPost(postService.selectById(postId)));
     }
 
