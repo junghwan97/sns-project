@@ -17,12 +17,14 @@ public interface PostEntityRepository extends JpaRepository<PostEntity, Long> {
     Page<PostEntity> findAllByOrderByRegisteredAtDesc(Pageable pageable);
 
     @Query("SELECT p FROM PostEntity p " +
+            "JOIN FETCH p.user " +
             "JOIN FollowEntity f ON p.user = f.following " +
             "WHERE f.follower = :user " +
             "ORDER BY p.id DESC")
     List<PostEntity> findPostsByFollowerOrderByIdDescWithoutCursor(UserEntity user, Pageable pageable);
 
     @Query("SELECT p FROM PostEntity p " +
+            "JOIN FETCH p.user " +
             "JOIN FollowEntity f ON p.user = f.following " +
             "WHERE f.follower = :user AND p.id < :cursorId " +
             "ORDER BY p.id DESC")
