@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "\"user\"")
+@Table(name = "\"user\"", indexes = @Index(name = "idx_deleted_at", columnList = "deleted_at"))
 @Getter
 @Setter
 @SQLDelete(sql = "UPDATE user SET deleted_at = NOW() where id=?")
