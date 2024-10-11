@@ -16,17 +16,20 @@ public interface PostEntityRepository extends JpaRepository<PostEntity, Long> {
 
     Page<PostEntity> findAllByOrderByRegisteredAtDesc(Pageable pageable);
 
-    @Query("SELECT p FROM PostEntity p " +
+    @Query("SELECT p FROM FollowEntity f " +
+            "JOIN PostEntity p ON p.user = f.following " +
             "JOIN FETCH p.user " +
-            "JOIN FollowEntity f ON p.user = f.following " +
             "WHERE f.follower = :user " +
-            "ORDER BY p.id DESC")
-    List<PostEntity> findPostsByFollowerOrderByIdDescWithoutCursor(UserEntity user, Pageable pageable);
+            "ORDER BY p.id DESC " +
+            "LIMIT :pageSize ")
+    List<PostEntity> findPostsByFollowerOrderByIdDescWithoutCursor(UserEntity user, Integer pageSize);
 
-    @Query("SELECT p FROM PostEntity p " +
+
+    @Query("SELECT p FROM FollowEntity f " +
+            "JOIN PostEntity p ON p.user = f.following " +
             "JOIN FETCH p.user " +
-            "JOIN FollowEntity f ON p.user = f.following " +
             "WHERE f.follower = :user AND p.id < :cursorId " +
-            "ORDER BY p.id DESC")
-    List<PostEntity> findPostsByFollowerOrderByIdDesc(UserEntity user, Pageable pageable, Long cursorId);
+            "ORDER BY p.id DESC " +
+            "LIMIT :pageSize ")
+    List<PostEntity> findPostsByFollowerOrderByIdDesc(UserEntity user, Long cursorId, Integer pageSize);
 }

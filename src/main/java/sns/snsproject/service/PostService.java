@@ -167,13 +167,13 @@ public class PostService {
 
     public List<PostResponse> getPostsFromFollowedUsers(String userName, Integer pageSize, Long cursorId) {
         UserEntity user = getUserEntityOrException(userName);
-        Pageable pageable = PageRequest.of(0, pageSize + 1);
+        pageSize = pageSize + 1;
 
         List<PostEntity> postEntities = new ArrayList<>();
         if (cursorId == 0) {
-            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDescWithoutCursor(user, pageable);
+            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDescWithoutCursor(user, pageSize);
         } else {
-            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDesc(user, pageable, cursorId);
+            postEntities = postEntityRepository.findPostsByFollowerOrderByIdDesc(user, cursorId, pageSize);
         }
         boolean hasNext = hasNext(postEntities.size(), pageSize);
         postEntities = toSubListIfHasNext(hasNext, pageSize, postEntities);
