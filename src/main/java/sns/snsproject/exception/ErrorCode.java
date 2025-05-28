@@ -17,7 +17,9 @@ public enum ErrorCode {
     INVALID_PERMISSION(HttpStatus.UNAUTHORIZED, "Permission is invalid"),
     ALREADY_LIKED(HttpStatus.CONFLICT, "User already liked post"),
     DUPLICATE_FOLLOW(HttpStatus.CONFLICT, "Duplicate Follow"),
-    FOLLOW_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLLOW Not Fount")
+    FOLLOW_NOT_FOUND(HttpStatus.NOT_FOUND, "FOLLOW Not Fount"),
+    OPTIMISTIC_LOCK_CONFLICT(HttpStatus.CONFLICT, "Resource update conflict. Please try again"),
+    CONFLICT_LIKE(HttpStatus.CONFLICT,"Resource update conflict. Please try again")
     ;
 
     private HttpStatus status;

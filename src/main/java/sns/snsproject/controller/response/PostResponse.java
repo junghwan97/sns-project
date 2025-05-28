@@ -24,6 +24,8 @@ public class PostResponse {
 
     private Timestamp deletedAt;
 
+    private Integer likeCount;
+
     public static PostResponse fromPost(Post post) {
 
         return new PostResponse(
@@ -33,7 +35,8 @@ public class PostResponse {
                 UserResponse.fromUser(post.getUser()),
                 post.getRegisteredAt(),
                 post.getUpdatedAt(),
-                post.getDeletedAt()
+                post.getDeletedAt(),
+                post.getLikes()
 
         );
     }

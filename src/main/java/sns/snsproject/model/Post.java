@@ -18,6 +18,8 @@ public class Post {
 
     private User user;
 
+    private Integer likes;
+
     private Timestamp registeredAt;
 
     private Timestamp updatedAt;
@@ -30,6 +32,7 @@ public class Post {
                 entity.getTitle(),
                 entity.getBody(),
                 User.fromEntity(entity.getUser()),
+                entity.getLikeCount(),
                 entity.getRegisteredAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()

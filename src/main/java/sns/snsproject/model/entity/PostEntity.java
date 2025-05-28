@@ -41,6 +41,13 @@ public class PostEntity {
     @Column(name = "deleted_at")
     private Timestamp deletedAt;
 
+    @Column(name = "like_count")
+    private Integer likeCount = 0;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @PrePersist
     void registeredAT() {
         this.registeredAt = Timestamp.from(Instant.now());
@@ -49,6 +56,16 @@ public class PostEntity {
     @PreUpdate
     void updatedAt() {
         this.updatedAt = Timestamp.from(Instant.now());
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
     }
 
     public static PostEntity of(String title, String body, UserEntity user) {

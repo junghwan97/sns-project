@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,19 +129,51 @@ public class PostService {
         return postEntityRepository.findAllByUser(userEntity, pageable).map(Post::fromEntity);
     }
 
+    public void likeWithRetry(Long postId, String userName) {
+        int retry = 0;
+        long startTime = System.currentTimeMillis();
+        while (retry < 10) {
+            try {
+                like(postId, userName);
+                long endTime = System.currentTimeMillis();
+                logSuccess(userName, retry, endTime - startTime);
+                return;
+            } catch (ObjectOptimisticLockingFailureException e) {
+                retry++;
+                System.out.println("🔁 낙관적 락 재시도 #" + retry);
+            }catch (SnsApplicationException e) {
+                long endTime = System.currentTimeMillis();
+                logFailure(userName, retry, endTime - startTime, e.getMessage());
+                return;
+            }
+        }
+//        throw new SnsApplicationException(ErrorCode.CONFLICT_LIKE, "동시 요청 충돌, 나중에 다시 시도해주세요.");
+        long endTime = System.currentTimeMillis();
+        logFailure(userName, retry, endTime - startTime, "재시도 초과");
+    }
+    private void logSuccess(String userName, int retry, long durationMs) {
+        System.out.printf("[Thread-%s] ✅ 성공 | 재시도: %d회 | 소요시간: %dms%n", userName, retry, durationMs);
+    }
+
+    private void logFailure(String userName, int retry, long durationMs, String reason) {
+        System.out.printf("[Thread-%s] ❌ 실패 | 재시도: %d회 | 소요시간: %dms | 예외: %s%n", userName, retry, durationMs, reason);
+    }
+
     @Transactional
     public void like(Long postId, String userName) {
 
         UserEntity userEntity = getUserEntityOrException(userName);
         PostEntity postEntity = getPostEntityOrException(postId);
 
-        // check like
-        likeEntityRepository.findByUserAndPost(userEntity, postEntity).ifPresent(it -> {
+        // 불필요한 데이터 로딩을 줄여 성능과 명확성을 높이기 위해 리팩토링
+        boolean alreadyLiked = likeEntityRepository.existsByUserAndPost(userEntity, postId);
+        if (alreadyLiked) {
             throw new SnsApplicationException(ErrorCode.ALREADY_LIKED, String.format("userName %s already like post %d", userName, postId));
-        });
+        }
 
+        postEntity.incrementLikeCount();
+        postEntityRepository.saveAndFlush(postEntity);
         likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
-
         alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
     }
 
