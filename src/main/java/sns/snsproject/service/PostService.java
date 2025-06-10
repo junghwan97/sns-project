@@ -1,11 +1,15 @@
 package sns.snsproject.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -13,10 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sns.snsproject.controller.response.PostResponse;
 import sns.snsproject.exception.ErrorCode;
 import sns.snsproject.exception.SnsApplicationException;
-import sns.snsproject.model.AlarmArgs;
-import sns.snsproject.model.AlarmType;
-import sns.snsproject.model.Comment;
-import sns.snsproject.model.Post;
+import sns.snsproject.model.*;
 import sns.snsproject.model.entity.*;
 import sns.snsproject.repository.*;
 import sns.snsproject.util.RedisStorage;
@@ -37,7 +38,10 @@ public class PostService {
     private final CommentEntityRepository commentEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
     private final RedisStorage redisStorage;
-    private final FollowEntityRepository followEntityRepository;
+
+    private final RedisTemplate<String, String> redisTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     // Redis Sorted Set의 key
     private static final String REDIS_KEY = "post:views";
@@ -141,7 +145,7 @@ public class PostService {
             } catch (ObjectOptimisticLockingFailureException e) {
                 retry++;
                 System.out.println("🔁 낙관적 락 재시도 #" + retry);
-            }catch (SnsApplicationException e) {
+            } catch (SnsApplicationException e) {
                 long endTime = System.currentTimeMillis();
                 logFailure(userName, retry, endTime - startTime, e.getMessage());
                 return;
@@ -151,6 +155,7 @@ public class PostService {
         long endTime = System.currentTimeMillis();
         logFailure(userName, retry, endTime - startTime, "재시도 초과");
     }
+
     private void logSuccess(String userName, int retry, long durationMs) {
         System.out.printf("[Thread-%s] ✅ 성공 | 재시도: %d회 | 소요시간: %dms%n", userName, retry, durationMs);
     }
@@ -177,10 +182,47 @@ public class PostService {
         alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
     }
 
+    private static final String LIKE_KEY_FORMAT = "post:%d:likes";
+
+    public void likes(Long postId, String userName) {
+        // Redis 키 구성: post:{postId}:likes
+        String redisKey = String.format(LIKE_KEY_FORMAT, postId);
+
+        // 좋아요 중복 시 좋아요 개수 감소
+        boolean alreadyLiked = likeEntityRepository.existsByUserAndPost(getUserEntityOrException(userName), postId);
+        if (alreadyLiked) {
+            redisTemplate.opsForValue().decrement(redisKey);
+        } else {
+            // Redis에서 좋아요 수 증가
+            redisTemplate.opsForValue().increment(redisKey);
+        }
+
+
+        // 2. Kafka 이벤트 전송
+        LikeEvent event = new LikeEvent(postId, userName);
+        try {
+            String message = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send("like-topic", message);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Kafka 메시지 직렬화 실패", e);
+        }
+    }
+
     @Transactional
     public long likeCount(Long postId) {
-        PostEntity postEntity = getPostEntityOrException(postId);
-        return likeEntityRepository.countByPost(postEntity);
+//        PostEntity postEntity = getPostEntityOrException(postId);
+//        return likeEntityRepository.countByPost(postEntity);
+        String key = String.format("post:%d:likes", postId);
+        String countStr = redisTemplate.opsForValue().get(key);
+
+        if (countStr != null) {
+            return Integer.parseInt(countStr);
+        }
+
+        // Redis에 없을 경우 DB fallback (선택적)
+        return postEntityRepository.findById(postId)
+                .map(PostEntity::getLikeCount)
+                .orElse(0);
     }
 
     @Transactional

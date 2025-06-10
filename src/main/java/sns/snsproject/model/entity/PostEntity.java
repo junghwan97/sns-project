@@ -44,9 +44,9 @@ public class PostEntity {
     @Column(name = "like_count")
     private Integer likeCount = 0;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
+//    @Version
+//    @Column(name = "version")
+//    private Long version;
 
     @PrePersist
     void registeredAT() {
@@ -66,6 +66,10 @@ public class PostEntity {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
+    }
+
+    public void setLikeCount(int count) {
+        this.likeCount = count;
     }
 
     public static PostEntity of(String title, String body, UserEntity user) {
