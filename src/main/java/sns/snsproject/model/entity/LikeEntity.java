@@ -3,19 +3,19 @@ package sns.snsproject.model.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "\"likes\"")
+@Table(name = "\"likes\"", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "post_id"})
+})
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE likes SET deleted_at = NOW() where id=?")
+//@SQLDelete(sql = "UPDATE likes SET deleted_at = NOW() where id=?")
 //@Where(clause = "deleted_at is NULL")
-@SQLRestriction("deleted_at is NULL")
+//@SQLRestriction("deleted_at is NULL")
 public class LikeEntity {
 
     @Id
@@ -33,21 +33,21 @@ public class LikeEntity {
     @Column(name = "registered_at")
     private Timestamp registeredAt;
 
-    @Column(name = "updated_at")
-    private Timestamp updatedAt;
-
-    @Column(name = "deleted_at")
-    private Timestamp deletedAt;
+//    @Column(name = "updated_at")
+//    private Timestamp updatedAt;
+//
+//    @Column(name = "deleted_at")
+//    private Timestamp deletedAt;
 
     @PrePersist
     void registeredAT() {
         this.registeredAt = Timestamp.from(Instant.now());
     }
 
-    @PreUpdate
-    void updatedAt() {
-        this.updatedAt = Timestamp.from(Instant.now());
-    }
+//    @PreUpdate
+//    void updatedAt() {
+//        this.updatedAt = Timestamp.from(Instant.now());
+//    }
 
     public static LikeEntity of(UserEntity user, PostEntity post) {
         LikeEntity entity = new LikeEntity();
